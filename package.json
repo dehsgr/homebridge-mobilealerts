@@ -1,6 +1,6 @@
 {
   "name": "homebridge-mobilealerts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Provides HomKit Access to MobileAlerts devices.",
   "main": "index.js",
   "scripts": {

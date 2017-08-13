@@ -286,7 +286,7 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
   });
 
   s = a.getService(Service.AccessoryInformation);
-  s.setCharacteristic(Characteristic.Manufacturer, Platform.manufacturer)
+  s.setCharacteristic(Characteristic.Manufacturer, Platform.Manufacturer)
   s.setCharacteristic(Characteristic.SerialNumber, mySerial);
   for (var i in Platform.DeviceTypes) {
     if (t == Platform.DeviceTypes[i]) {
