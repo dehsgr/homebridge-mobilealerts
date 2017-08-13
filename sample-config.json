@@ -1,0 +1,20 @@
+{
+    "bridge": {
+        "name": "HomebridgeSample",
+        "username": "CD:22:3D:E3:CE:30",
+        "port": 51826,
+        "pin": "031-45-156"
+    },
+    
+    "description": "This is a sample configuration file for homebridge-mobilealerts.",
+
+    "platforms": [
+        {
+            "platform": "MobileAlerts",
+            "name": "MobileAlerts",
+            "iphoneid": "012345678910"
+        }
+    ],
+
+    "accessories": []
+}

@@ -1,0 +1,25 @@
+{
+  "name": "homebridge-mobilealerts",
+  "version": "0.0.1",
+  "description": "Provides HomKit Access to MobileAlerts devices.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "author": "d3h56r",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dehsgr/homebridge-mobilealrts.git"
+  },
+  "dependencies": {
+    "request": "^2.67.0"
+  }
+}

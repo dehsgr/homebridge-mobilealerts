@@ -26,10 +26,9 @@ Configuration sample file:
 
 To retrieve your iPhone ID please follow following guide:
 
-1.) Open your Mobile Alerts app.
-2.) Go to "Settings".
-3.) Scroll down to find your iPhone ID. 
-
+1. Open your Mobile Alerts app.
+2. Go to "Settings".
+3. Scroll down to find your iPhone ID. 
 
 
 Currently only MA 10006 and MA 10350 devices can be processed.
