@@ -1,4 +1,4 @@
-# homebridge-mobilealerts
+# homebridge-mobilealerts [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MRG4QXJBLRV8N)
 
 This is a homebridge plugin for several Mobile-Alerts (Technoline) devices
 
@@ -30,4 +30,3 @@ To retrieve your iPhone ID please follow following guide:
 
 # Remarks
 - Currently only MA 10006 and MA 10350 devices can be processed.
-- If you want to donate for my work: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](dehsgr@outlook.com)
