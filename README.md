@@ -1,6 +1,6 @@
 # homebridge-mobilealerts
 
-This is a homebridge plugin for several Mobile-Alerts (Technologe) devices
+This is a homebridge plugin for several Mobile-Alerts (Technoline) devices
 
 # Installation
 
