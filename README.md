@@ -27,5 +27,9 @@ To retrieve your iPhone ID please follow following guide:
 2. Go to "Settings".
 3. Scroll down to find your iPhone ID. 
 
-# Remarks
-- Currently only MA 10006 and MA 10350 devices can be processed.
+# Currently Supported Devices
+- MA 10006
+- MA 10100
+- MA 10200
+- MA 10320
+- MA 10350
