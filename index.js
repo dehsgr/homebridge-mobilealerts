@@ -210,6 +210,7 @@ MobileAlerts.prototype.updateSensorData = function()
         m = r.exec(Platform.LastData);
         if (m) {
           b = true;
+          s.getCharacteristic(Characteristic.CurrentTemperature).setProps({ minValue: -100 });
           s.setCharacteristic(
             Characteristic.CurrentTemperature,
             parseFloat(m[1].replace(/,/gi, '.'))
