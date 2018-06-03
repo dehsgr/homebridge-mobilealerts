@@ -5,16 +5,16 @@ var WAIT_FOR_DATA_INTERVAL  = 01 * 01 * 1000;   // 1 second
 
 var MA10006_TEMPERATURE_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10006_TEMPERATURE_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Au&#223;en<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
-var MA10006_HUMIDITY_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchtigkeit Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
-var MA10006_HUMIDITY_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchtigkeit Au&#223;en<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10006_HUMIDITY_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuche Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10006_HUMIDITY_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte Au&#223;en<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10100_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10200_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
-var MA10200_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchtigkeit<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10200_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10320_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10320_TEMPERATURE_CABLE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Kabelsensor<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
-var MA10320_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchtigkeit<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10320_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10350_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
-var MA10350_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchtigkeit<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10350_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10350_LEAK = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Wassersensor<\\/h5>[\\s\\S]*?.*?<h4>(.*?)<\\/h4>';
 var MA10700_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10700_TEMPERATURE_CABLE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Kabelsensor<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
@@ -62,7 +62,7 @@ function MobileAlerts(myLog, myConfig, myApi)
   } else {
       Platform.log('iPhone-ID was set to ' + Platform.Config.iphoneid + '...');
   }
-  
+
   this.fetchData();
 
   if (myApi) {
@@ -162,7 +162,7 @@ MobileAlerts.prototype.updateSensorData = function()
           r = MA10350_LEAK.replace(/%SERIAL%/gi, c.value);
           break;
       }
-      
+
       if (r) {
         r = new RegExp(r, 'gi');
         m = r.exec(Platform.LastData);
@@ -215,7 +215,7 @@ MobileAlerts.prototype.updateSensorData = function()
           break;
 
       }
-      
+
       if (r) {
         r = new RegExp(r, 'gi');
         m = r.exec(Platform.LastData);
@@ -256,7 +256,7 @@ MobileAlerts.prototype.updateSensorData = function()
           r = MA10700_HUMIDITY.replace(/%SERIAL%/gi, c.value);
           break;
       }
-      
+
       if (r) {
         r = new RegExp(r, 'gi');
         m = r.exec(Platform.LastData);
@@ -295,7 +295,7 @@ MobileAlerts.prototype.fetchData = function()
         break;
     }
   }.bind(this));
-  
+
   setTimeout(Platform.fetchData.bind(this), POLLING_INTERVAL);
 }
 
@@ -394,14 +394,14 @@ MobileAlerts.prototype.removeAccessory = function(mySerial)
  var Platform = this;
  var a;   // accessory
  var i;   // index
-  
+
   a = Platform.Accessories[mySerial];
   if (!a) {
     return;
   }
 
   Platform.log.warn('Removing Accessory ' + a.displayName);
-  
+
   i = Platform.Accessories.indexOf(a);
   Platform.Accessories.splice(i, 1);
   Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
