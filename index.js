@@ -5,7 +5,7 @@ var WAIT_FOR_DATA_INTERVAL  = 01 * 01 * 1000;   // 1 second
 
 var MA10006_TEMPERATURE_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10006_TEMPERATURE_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur Au&#223;en<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
-var MA10006_HUMIDITY_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuche Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
+var MA10006_HUMIDITY_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte Innen<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10006_HUMIDITY_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Luftfeuchte Au&#223;en<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10100_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10200_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?Temperatur<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
