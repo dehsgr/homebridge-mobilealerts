@@ -10,7 +10,7 @@ This is a homebridge plugin for several Mobile-Alerts (Technoline) devices
 3. Update your configuration file. See sample-config.json in this repository for a sample. 
 
 # Configuration
-Configuration sample file:
+Configuration sample:
 
  ```
 "platforms": [

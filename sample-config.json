@@ -12,7 +12,11 @@
         {
             "platform": "MobileAlerts",
             "name": "MobileAlerts",
-            "iphoneid": "012345678910"
+            "iphoneid": "012345678910",
+            "log": {
+                "verbose": false,
+                "HTML": false
+            }
         }
     ],
 

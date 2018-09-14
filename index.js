@@ -15,7 +15,7 @@ var MA10320_TEMPERATURE_CABLE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*
 var MA10320_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
 var MA10350_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10350_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
-var MA10350_LEAK = '.*?<h4>%SERIAL%[\s\S]*?.*?<\/h5>[\s\S]*?.*?<\/h5>[\s\S]*?.*?<\/h5>[\s\S]*?.*?<\/h5>[\s\S]*?.*?<h4>(.*?)<\/h4>';
+var MA10350_LEAK = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)<\\/h4>';
 var MA10700_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10700_TEMPERATURE_CABLE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?) C<\\/h4>';
 var MA10700_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)%<\\/h4>';
@@ -55,6 +55,8 @@ function MobileAlerts(myLog, myConfig, myApi)
   this.Model = this.Config.model || 'MobileAlerts';
   this.Serial = this.Config.iphoneid;
   this.LastData;
+  this.VerboseLogging = this.Config.log.verbose || false;
+  this.LogBodyHTML = this.Config.log.HTML || false;
 
   if (!this.Config.iphoneid) {
     Platform.log.error('iPhone-ID not configured properly! >> Stopping Initialization...');
@@ -107,6 +109,10 @@ MobileAlerts.prototype.OnFinishLaunching = function()
     s = m[MatchType.Serial];
     ay[s] = n;
     if (!Platform.Accessories[s]) {       // known serial?
+      if (Platform.VerboseLogging) {
+        Platform.log('Adding Sensor "' + n + '" with Serial ' + s);
+      }
+
       Platform.addAccessory(n, s);        // no! >> so we've to add new accessory!
       c++;
     }
@@ -116,6 +122,10 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 
   for (var s in Platform.Accessories) {   // iterate each accessory.
     if (!ay[s] && s.indexOf('-') < 0) {   // known serial?
+      if (Platform.VerboseLogging) {
+        Platform.log('Removing unknown Sensor with Serial ' + s);
+      }
+
       Platform.removeAccessory(s);        // no! >> so we've to remove accessory!
       if (Platform.Accessories[s + '-OUT']) {
         Platform.removeAccessory(s + '-OUT');
@@ -177,6 +187,10 @@ MobileAlerts.prototype.updateSensorData = function()
               Characteristic.LeakDetected.LEAK_NOT_DETECTED :
               Characteristic.LeakDetected.LEAK_DETECTED
           );
+
+          if (Platform.VerboseLogging) {
+            Platform.log('Setting Leack Detection Value to "' + m[1]  + '" for Sensor with Serial ' + c.value);
+          }
         }
       }
     }
@@ -229,6 +243,10 @@ MobileAlerts.prototype.updateSensorData = function()
             Characteristic.CurrentTemperature,
             parseFloat(m[1].replace(/,/gi, '.'))
           );
+
+          if (Platform.VerboseLogging) {
+            Platform.log('Setting Temperature Value to ' + parseFloat(m[1].replace(/,/gi, '.'))  + '° for Sensor with Serial ' + c.value);
+          }
         }
       }
     }
@@ -269,6 +287,10 @@ MobileAlerts.prototype.updateSensorData = function()
             Characteristic.CurrentRelativeHumidity,
             parseInt(m[1])
           );
+
+          if (Platform.VerboseLogging) {
+            Platform.log('Setting Humidity Value to ' + parseInt(m[1])  + '% for Sensor with Serial ' + c.value);
+          }
         }
       }
 
@@ -289,12 +311,17 @@ MobileAlerts.prototype.fetchData = function()
   r('http://measurements.mobile-alerts.eu/Home/SensorsOverview?phoneid=' + Platform.Config.iphoneid, function (myError, myResponse, myBody) {
     switch (true) {
       case myResponse && myResponse.statusCode == 200:
+        if (Platform.LogBodyHTML) {
+          Platform.log('We\'ll update Sensor Data from the following HTML Body:');
+          myBody.split('\n').forEach(function(myLine) { Platform.log(myLine); });
+        }
+
         Platform.LastData = myBody;
         Platform.updateSensorData();
         break;
 
       default:
-        Platform.log.warn('There was an Error requesting initial Data for Sensor-Matching  : ' + myError);
+        Platform.log.warn('There was an Error requesting initial Data for Sensor-Matching: ' + myError);
         break;
     }
   }.bind(this));
