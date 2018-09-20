@@ -55,7 +55,7 @@ function MobileAlerts(myLog, myConfig, myApi)
   this.Model = this.Config.model || 'MobileAlerts';
   this.Serial = this.Config.iphoneid;
   this.LastData;
-  this.log = this.log || { verbose: false, HTML: false };
+  this.Config.log = this.Config.log || { verbose: false, HTML: false };
   this.VerboseLogging = this.Config.log.verbose || false;
   this.LogBodyHTML = this.Config.log.HTML || false;
 
