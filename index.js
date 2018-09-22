@@ -106,17 +106,9 @@ MobileAlerts.prototype.OnFinishLaunching = function()
   r = /.*?sensor-header[\s\S]*?.*?<a href.*?>(.*?)<\/a>[\s\S]*?.*?<h4>(.*?)<\/h4>/gi;
   m = r.exec(Platform.LastData);
   while(m !== null) {                     // get each sensor serial and name
-    n = m[MatchType.Name]
+    n = m[MatchType.Name]                 // from initial sensor data...
     s = m[MatchType.Serial];
-    ay[s] = n;
-    if (!Platform.Accessories[s]) {       // known serial?
-      if (Platform.VerboseLogging) {
-        Platform.log('Adding Sensor "' + n + '" with Serial ' + s);
-      }
-
-      Platform.addAccessory(n, s);        // no! >> so we've to add new accessory!
-      c++;
-    }
+    ay[s] = n;                            // ...and add it to test array.
 
     m = r.exec(Platform.LastData);
   }
@@ -124,7 +116,7 @@ MobileAlerts.prototype.OnFinishLaunching = function()
   for (var s in Platform.Accessories) {   // iterate each accessory.
     if (!ay[s] && s.indexOf('-') < 0) {   // known serial?
       if (Platform.VerboseLogging) {
-        Platform.log('Removing unknown Sensor with Serial ' + s);
+        Platform.log('Removing unknown Sensor with Serial ' + s + '.');
       }
 
       Platform.removeAccessory(s);        // no! >> so we've to remove accessory!
@@ -140,11 +132,28 @@ MobileAlerts.prototype.OnFinishLaunching = function()
     }
   }
 
-  Platform.log(c + ' Sensors created...');
+  r.lastIndex = 0;                        // re-set regex stato te be able to
+  m = r.exec(Platform.LastData);          // re-parse.
+  while(m !== null) {                     // get each sensor serial and name.
+    n = m[MatchType.Name]
+    s = m[MatchType.Serial];
+    if (!Platform.Accessories[s]) {       // known serial?
+      if (Platform.VerboseLogging) {
+        Platform.log('Adding Sensor "' + n + '" with Serial ' + s + '.');
+      }
+
+      Platform.addAccessory(n, s);        // no! >> so we've to add new accessory!
+      c++;
+    }
+
+    m = r.exec(Platform.LastData);
+  }
+
+  Platform.log(c + ' Sensors created.');
   if (d > 0) {
-    Platform.log.warn(d + ' Sensors deleted...');
+    Platform.log.warn(d + ' Sensors deleted!');
   } else {
-    Platform.log(d + ' Sensors deleted...');
+    Platform.log(d + ' Sensors deleted.');
   }
 }
 
@@ -190,7 +199,7 @@ MobileAlerts.prototype.updateSensorData = function()
           );
 
           if (Platform.VerboseLogging) {
-            Platform.log('Setting Leack Detection Value to "' + m[1]  + '" for Sensor with Serial ' + c.value);
+            Platform.log('Setting Leack Detection Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
           }
         }
       }
@@ -246,7 +255,7 @@ MobileAlerts.prototype.updateSensorData = function()
           );
 
           if (Platform.VerboseLogging) {
-            Platform.log('Setting Temperature Value to ' + parseFloat(m[1].replace(/,/gi, '.'))  + '° for Sensor with Serial ' + c.value);
+            Platform.log('Setting Temperature Value to ' + parseFloat(m[1].replace(/,/gi, '.'))  + '° for Sensor ' + a.displayName + '.');
           }
         }
       }
@@ -290,13 +299,13 @@ MobileAlerts.prototype.updateSensorData = function()
           );
 
           if (Platform.VerboseLogging) {
-            Platform.log('Setting Humidity Value to ' + parseInt(m[1])  + '% for Sensor with Serial ' + c.value);
+            Platform.log('Setting Humidity Value to ' + parseInt(m[1])  + '% for Sensor ' + a.displayName + '.');
           }
         }
       }
 
       if (!b) {
-        Platform.log.warn('Could not get Data for Sensor ' + c.value + '...');
+        Platform.log.warn('Could not get (valid?) Data for Sensor ' + a.displayName + '!');
       }
     }
   }
@@ -335,7 +344,7 @@ MobileAlerts.prototype.configureAccessory = function(myAccessory) {
  var s;   // service
  var c;   // characteristic
 
-  Platform.log(myAccessory.displayName, 'is being configured...');
+  Platform.log(myAccessory.displayName, 'is being configured.');
 
   s = myAccessory.getService(Service.AccessoryInformation);
   c = s.getCharacteristic(Characteristic.SerialNumber);
@@ -343,7 +352,7 @@ MobileAlerts.prototype.configureAccessory = function(myAccessory) {
 
   myAccessory.reachable = false;
   myAccessory.on('identify', function(isPaired, myCallback) {
-    Platform.log(myAccessory.displayName, 'is being identified...');
+    Platform.log(myAccessory.displayName, 'is being identified.');
     myCallback();
   });
 }
@@ -356,13 +365,13 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
  var c;   // characteristic
  var t;   // type
 
-  Platform.log('Adding Accessory ' + myName + '...');
+  Platform.log('Adding Accessory ' + myName + '.');
 
   t = parseInt(mySerial.substr(0, 2));
   u = UUIDGen.generate(myName);
   a = new Accessory(myName, u);
   a.on('identify', function(isPaired, myCallback) {
-    Platform.log(myName, 'is being identified...');
+    Platform.log(myName, 'is being identified.');
     myCallback();
   });
 
@@ -431,7 +440,7 @@ MobileAlerts.prototype.removeAccessory = function(mySerial)
     return;
   }
 
-  Platform.log.warn('Removing Accessory ' + a.displayName);
+  Platform.log.warn('Removing Accessory ' + a.displayName + '.');
 
   i = Platform.Accessories.indexOf(a);
   Platform.Accessories.splice(i, 1);
