@@ -193,7 +193,8 @@ MobileAlerts.prototype.updateSensorData = function()
             Characteristic.LeakDetected,
               (
                 m[1] == 'Trocken' ||
-                m[1] == 'Dry'
+                m[1] == 'Dry' ||
+                m[1] == 'Aride'
               ) ?
               Characteristic.LeakDetected.LEAK_NOT_DETECTED :
               Characteristic.LeakDetected.LEAK_DETECTED
