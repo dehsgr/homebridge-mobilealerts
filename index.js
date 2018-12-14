@@ -8,6 +8,8 @@ var MA10006_TEMPERATURE_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?
 var MA10006_HUMIDITY_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10006_HUMIDITY_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10100_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
+var MA10120_TEMPERATURE_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
+var MA10120_TEMPERATURE_OUTSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10200_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10200_HUMIDITY = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10320_TEMPERATURE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
@@ -76,7 +78,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 // ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.DeviceTypes = { MA10100: 2, MA10200: 3, MA10350: 4, MA10700: 6, MA10006: 7, MA10320: 9 };
+MobileAlerts.prototype.DeviceTypes = { MA10120: 1, MA10100: 2, MA10200: 3, MA10350: 4, MA10700: 6, MA10006: 7, MA10320: 9 };
 
 // ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -221,7 +223,14 @@ MobileAlerts.prototype.updateSensorData = function()
           r = MA10100_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
           break;
 
-        case Platform.DeviceTypes.MA10200:
+        case Platform.DeviceTypes.MA10120:
+          p = c.value.indexOf('-');
+          r = (p < 0) ?
+              MA10120_TEMPERATURE_INSIDE.replace(/%SERIAL%/gi, c.value) :
+              MA10120_TEMPERATURE_OUTSIDE.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+          break;
+
+          case Platform.DeviceTypes.MA10200:
           r = MA10200_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
           break;
 
@@ -400,6 +409,13 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
     case Platform.DeviceTypes.MA10006:
       s = a.addService(Service.TemperatureSensor, a.displayName);
       s = a.addService(Service.HumiditySensor, a.displayName);
+      if (mySerial.indexOf('-') < 0) {
+        Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
+      }
+      break;
+
+    case Platform.DeviceTypes.MA10120:
+      s = a.addService(Service.TemperatureSensor, a.displayName);
       if (mySerial.indexOf('-') < 0) {
         Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
       }
