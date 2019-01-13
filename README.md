@@ -1,7 +1,5 @@
 # homebridge-mobilealerts 
 
-<span class="badge-paypal"><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MRG4QXJBLRV8N" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
-
 This is a homebridge plugin for several Mobile-Alerts (Technoline) devices
 
 # Installation
