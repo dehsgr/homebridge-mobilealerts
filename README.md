@@ -26,10 +26,12 @@ To retrieve your iPhone ID please follow following guide:
 3. Scroll down to find your iPhone ID. 
 
 # Currently Supported Devices
+- MA 10001
 - MA 10006
 - MA 10100
 - MA 10120
 - MA 10200
 - MA 10320
 - MA 10350
+- MA 10421
 - MA 10700
