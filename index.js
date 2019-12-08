@@ -257,19 +257,19 @@ MobileAlerts.prototype.updateSensorData = function()
           p = c.value.indexOf('-');
           switch (true) {
             case c.value.indexOf('-1') >= 0:
-              MA10421_TEMPERATURE_1.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_TEMPERATURE_1.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break; 
 
             case c.value.indexOf('-2') >= 0:
-              MA10421_TEMPERATURE_2.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_TEMPERATURE_2.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break; 
 
             case c.value.indexOf('-3') >= 0:
-              MA10421_TEMPERATURE_3.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_TEMPERATURE_3.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break;
             
             default:
-              MA10421_TEMPERATURE.replace(/%SERIAL%/gi, c.value)  
+              r = MA10421_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
               break;
           }
           break;
@@ -332,19 +332,19 @@ MobileAlerts.prototype.updateSensorData = function()
           p = c.value.indexOf('-');
           switch (true) {
             case c.value.indexOf('-1') >= 0:
-              MA10421_HUMIDITY_1.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_HUMIDITY_1.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break; 
 
             case c.value.indexOf('-2') >= 0:
-                MA10421_HUMIDITY_2.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_HUMIDITY_2.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break; 
 
             case c.value.indexOf('-3') >= 0:
-                MA10421_HUMIDITY_3.replace(/%SERIAL%/gi, c.value.substr(0, --p));
+              r = MA10421_HUMIDITY_3.replace(/%SERIAL%/gi, c.value.substr(0, --p));
               break;
             
             default:
-              MA10421_HUMIDITY.replace(/%SERIAL%/gi, c.value)  
+              r = MA10421_HUMIDITY.replace(/%SERIAL%/gi, c.value);
               break;
           }
           break;
