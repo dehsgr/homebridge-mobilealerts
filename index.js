@@ -1,6 +1,6 @@
 // ~~~ constants ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-var POLLING_INTERVAL        = 01 * 60 * 1000;   // 60 seconds
+var POLLING_INTERVAL        = 01 * 60 * 1000;   // 60 seconds default
 var WAIT_FOR_DATA_INTERVAL  = 01 * 01 * 1000;   // 1 second
 
 var MA10006_TEMPERATURE_INSIDE = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
@@ -75,6 +75,13 @@ function MobileAlerts(myLog, myConfig, myApi)
   } else {
       Platform.log('iPhone-ID was set to ' + Platform.Config.iphoneid + '...');
   }
+  if (!this.pollingInterval) {
+    Platform.log.error('pollingInterval not configured properly! >> Using default: 60s...');
+  } else {
+      POLLING_INTERVAL = Platform.Config.pollingInterval*1000
+      Platform.log('pollingInterval was set to ' + Platform.Config.pollingInterval+'s...');
+  }
+
 
   this.fetchData();
 
