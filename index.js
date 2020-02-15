@@ -86,7 +86,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 // ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.DeviceTypes = { MA10120: 1, MA10100: 2, MA10200: 3, MA10350: 4, MA10700: 6, MA10006: 7, MA10320: 9, MA10421: 11 };
+MobileAlerts.prototype.DeviceTypes = { MA10120: 1, MA10100: 2, MA10200: 3, MA10350: 4, MA10700: 6, MA10006: 7, MA10320: 9, MA10660: 11, MA10421: 17, MA10232: 18 };
 
 // ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -239,6 +239,7 @@ MobileAlerts.prototype.updateSensorData = function()
           break;
 
         case Platform.DeviceTypes.MA10200:
+        case Platform.DeviceTypes.MA10232:
           r = MA10200_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
           break;
 
@@ -317,6 +318,7 @@ MobileAlerts.prototype.updateSensorData = function()
           break;
 
         case Platform.DeviceTypes.MA10200:
+        case Platform.DeviceTypes.MA10232:
           r = MA10200_HUMIDITY.replace(/%SERIAL%/gi, c.value);
           break;
 
@@ -476,6 +478,7 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
       break;
 
     case Platform.DeviceTypes.MA10200:
+    case Platform.DeviceTypes.MA10232:
       s = a.addService(Service.TemperatureSensor, a.displayName);
       s = a.addService(Service.HumiditySensor, a.displayName);
       break;

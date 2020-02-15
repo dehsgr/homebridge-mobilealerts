@@ -31,6 +31,7 @@ To retrieve your iPhone ID please follow following guide:
 - MA 10100
 - MA 10120
 - MA 10200
+- MA 10232
 - MA 10320
 - MA 10350
 - MA 10421
