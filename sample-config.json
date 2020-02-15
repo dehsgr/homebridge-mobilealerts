@@ -13,9 +13,11 @@
             "platform": "MobileAlerts",
             "name": "MobileAlerts",
             "iphoneid": "012345678910",
+            "pollingInterval": 420,
             "log": {
                 "verbose": false,
                 "HTML": false
+
             }
         }
     ],

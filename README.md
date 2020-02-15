@@ -16,6 +16,12 @@ Configuration sample:
         "platform": "MobileAlerts",
         "name": "MobileAlerts",
         "iphoneid": "YOURIPHONEID"
+            "pollingInterval": seconds,
+            "log": {
+                "verbose": false,
+                "HTML": false
+
+            }
     }
 ]
 ```
