@@ -1,6 +1,6 @@
 // ~~~ constants ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-var POLLING_INTERVAL            = 07 * 60 * 1000;   // pollingInterval is the interval at which the sensor values are fetched from the Mobile Alerts Server. A value smaller than 420 seconds, i.e. 7 minutes, is meaningless because Mobile Alerts only saves the values every 7 minutes anyway.
+var POLLING_INTERVAL            = 07 * 60 * 1000;   // 7 minutes
 var WAIT_FOR_DATA_INTERVAL      = 01 * 01 * 1000;   // 1 second
 
 var MA10006_TEMPERATURE_INSIDE  = '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
@@ -76,11 +76,11 @@ function MobileAlerts(myLog, myConfig, myApi)
       Platform.log('iPhone-ID was set to ' + Platform.Config.iphoneid + '...');
   }
 
-  if (!this.Config.pollingInterval) {
-    Platform.log.error('pollingInterval not configured >> Using default: 420s...');
+  if (!this.Config.pollinginterval) {
+    Platform.log.error('pollinginterval not configured >> Using default: 420s...');
   } else {
-      POLLING_INTERVAL = Platform.Config.pollingInterval*1000
-      Platform.log('pollingInterval was set to ' + Platform.Config.pollingInterval+'s...');
+      POLLING_INTERVAL = Platform.Config.pollinginterval*1000
+      Platform.log('pollinginterval was set to ' + Platform.Config.pollinginterval+'s...');
   }
   this.fetchData();
 
@@ -151,7 +151,7 @@ MobileAlerts.prototype.OnFinishLaunching = function()
   r.lastIndex = 0;                        // re-set regex stato te be able to
   m = r.exec(Platform.LastData);          // re-parse.
   while(m !== null) {                     // get each sensor serial and name.
-    n = clean(m[MatchType.Name])        // clean German Umlaute
+    n = cleanUmlaute(m[MatchType.Name])   // clean German Umlaute
     s = m[MatchType.Serial];
     if (!Platform.Accessories[s]) {       // known serial?
       if (Platform.VerboseLogging) {
@@ -547,13 +547,13 @@ MobileAlerts.prototype.removeAccessory = function(mySerial)
   Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
 }
 
-function clean(myName) {
- myName=myName.replace(/&#228;/g, "ä");
- myName=myName.replace(/&#246;/g, "ö");
- myName=myName.replace(/&#252;/g, "ü");
- myName=myName.replace(/&#196;/g, "Ä");
- myName=myName.replace(/&#214;/g, "Ö");
- myName=myName.replace(/&#220;/g, "Ü");
- myName=myName.replace(/&#223;/g, "ß");
- return myName;
+function cleanUmlaute(myName) {
+  myName=myName.replace(/&#228;/g, "ä");
+  myName=myName.replace(/&#246;/g, "ö");
+  myName=myName.replace(/&#252;/g, "ü");
+  myName=myName.replace(/&#196;/g, "Ä");
+  myName=myName.replace(/&#214;/g, "Ö");
+  myName=myName.replace(/&#220;/g, "Ü");
+  myName=myName.replace(/&#223;/g, "ß");
+  return myName;
 }
