@@ -68,6 +68,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 	this.Config.log = this.Config.log || { verbose: false, HTML: false };
 	this.VerboseLogging = this.Config.log.verbose || false;
 	this.LogBodyHTML = this.Config.log.HTML || false;
+  this.ResetSensors = this.Config.reset || false;
 
 	if (!this.Config.iphoneid) {
 		Platform.log.error('iPhone-ID not configured properly! >> Stopping Initialization...');
@@ -102,13 +103,13 @@ MobileAlerts.prototype.OnFinishLaunching = function()
  var Platform = this;
  var MatchType = { Name: 1, Serial: 2 };
  var ao;  // additional objects (sensors)
- var ay;  // array
+ var ay;  // test array
  var r;   // regex
  var m;   // matches
  var n;   // name
  var s;   // serial
- var c;   // created devices
- var d;   // deletd devices
+ var c;   // # created devices
+ var d;   // # deletd devices
  var p;   // position
 
 	Platform.log('Merging Sensors...');
@@ -124,17 +125,22 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 	r = /.*?sensor-header[\s\S]*?.*?<a href.*?>(.*?)<\/a>[\s\S]*?.*?<h4>(.*?)<\/h4>/gi;
 	m = r.exec(Platform.LastData);
 	while(m !== null) {                     // get each sensor serial and name
-		n = cleanUmlauts(m[MatchType.Name]);  // from initial sensor data...
+		n = cleanUmlauts(m[MatchType.Name]);	// from initial sensor data...
 		s = m[MatchType.Serial];
 		ay[s] = n;                            // ...and add it to test array.
 
 		m = r.exec(Platform.LastData);
 	}
 
+	if (Platform.ResetSensors) {
+		Platform.log('Resetting Sensors...');
+	}
+
+	//remove ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	for (var s in Platform.Accessories) {   // iterate each accessory.
-		if (!ay[s] && s.indexOf('-') < 0) {   // known serial?
+		if ((!ay[s] && s.indexOf('-') < 0) || Platform.ResetSensors) { // known serial or reset?
 			if (Platform.VerboseLogging) {
-				Platform.log('Removing unknown Sensor with Serial ' + s + '.');
+				Platform.log('Removing Sensor with Serial ' + s + '.');
 			}
 
 			Platform.removeAccessory(s);        // no! >> so we've to remove accessory!
@@ -151,11 +157,12 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 
 	r.lastIndex = 0;                        // re-set regex stato te be able to
 	m = r.exec(Platform.LastData);          // re-parse.
+
+	//add ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	while(m !== null) {                     // get each sensor serial and name.
-		n = cleanUmlauts(m[MatchType.Name]);  // clean german umlauts
-		n = m[MatchType.Name];
 		s = m[MatchType.Serial];
 		if (!Platform.Accessories[s]) {       // known serial?
+			n = cleanUmlaute(m[MatchType.Name]);
 			if (Platform.VerboseLogging) {
 				Platform.log('Adding Sensor "' + n + '" with Serial ' + s + '.');
 			}
@@ -538,9 +545,10 @@ MobileAlerts.prototype.removeAccessory = function(mySerial)
 
 	Platform.log.warn('Removing Accessory ' + a.displayName + '.');
 
-	i = Platform.Accessories.indexOf(a);
-	Platform.Accessories.splice(i, 1);
-	Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
+  i = Platform.Accessories.indexOf(a);
+  Platform.Accessories.splice(i, 1);
+  Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
+  delete Platform.Accessories[mySerial];    //wichtig, sonst funktioniert reset nicht, da a bislang nicht eigentlich entfernt wurde
 }
 
 function cleanUmlauts(myName) {
