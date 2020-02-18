@@ -2,12 +2,12 @@
 
 This is a homebridge plugin for several Mobile-Alerts (Technoline) devices
 
-# Installation
+## Installation
 1. Install homebridge using: npm install -g homebridge
 2. Install this plugin using: npm install -g homebridge-mobilealerts
 3. Update your configuration file. See sample-config.json in this repository for a sample. 
 
-# Configuration
+## Configuration
 Configuration sample:
 
  ```
@@ -26,16 +26,19 @@ Configuration sample:
 ]
 ```
 
-Reset removes and add the sensors/accessories again.
-
-Pollinginterval is the interval in seconds at which the sensor values are fetched from the Mobile Alerts Server. A value smaller than 420 seconds, i.e. 7 minutes, is meaningless because Mobile Alerts only saves the values every 7 minutes anyway.
-
-To retrieve your iPhone ID please follow following guide:
+To retrieve your `iphoneid` please follow following guide:
 1. Open your Mobile Alerts app.
 2. Go to "Settings".
 3. Scroll down to find your iPhone ID. 
 
-# Currently Supported Devices
+#### Optional Parameters
+
+`pollinginterval` is the interval in seconds at which the sensor values are fetched from the Mobile Alerts Server. A value smaller than 420 seconds, i.e. 7 minutes, is meaningless because Mobile Alerts only saves the values every 7 minutes anyway.
+
+`reset` removes and add the sensors/accessories again.
+
+
+## Currently Supported Devices
 - MA 10001
 - MA 10006
 - MA 10100
