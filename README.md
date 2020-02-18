@@ -12,16 +12,16 @@ Configuration sample:
 
  ```
 "platforms": [
-    {
-        "platform": "MobileAlerts",
-        "name": "MobileAlerts",
-        "iphoneid": "YOURIPHONEID"
-        "pollinginterval": 420,
-        "log": {
-            "verbose": false,
-            "HTML": false
-        }
-    }
+	{
+		"platform": "MobileAlerts",
+		"name": "MobileAlerts",
+		"iphoneid": "YOURIPHONEID"
+		"pollinginterval": 420,
+		"log": {
+			"verbose": false,
+			"HTML": false
+		}
+	}
 ]
 ```
 
