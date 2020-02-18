@@ -25,8 +25,6 @@ Configuration sample:
 ]
 ```
 
-pollingInterval is the interval in seconds at which the sensor values are fetched from the Mobile Alerts Server. A value smaller than 420 seconds, i.e. 7 minutes, is meaningless because Mobile Alerts only saves the values every 7 minutes anyway.
-
 To retrieve your iPhone ID please follow following guide:
 1. Open your Mobile Alerts app.
 2. Go to "Settings".
