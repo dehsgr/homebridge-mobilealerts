@@ -162,7 +162,7 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 	while(m !== null) {                     // get each sensor serial and name.
 		s = m[MatchType.Serial];
 		if (!Platform.Accessories[s]) {       // known serial?
-			n = cleanUmlaute(m[MatchType.Name]);
+			n = cleanUmlauts(m[MatchType.Name]);
 			if (Platform.VerboseLogging) {
 				Platform.log('Adding Sensor "' + n + '" with Serial ' + s + '.');
 			}
