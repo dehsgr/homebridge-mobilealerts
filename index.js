@@ -94,7 +94,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 // ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.DeviceTypes = { MA10120: 1, MA10100: 2, MA10200: 3, MA10350: 4, MA10700: 6, MA10006: 7, MA10320: 9, MA10421: 11, MA10230: 12, MA10660: 17, MA10232: 18 };
+MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10421: 0x17, MA10230: 0x18, MA10660: 0x23, MA10232: 0x24 };
 
 // ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -203,7 +203,7 @@ MobileAlerts.prototype.updateSensorData = function()
 		r = undefined;
 		if(a.getService(Service.LeakSensor)) {
 			s = a.getService(Service.LeakSensor);
-			switch (parseInt(c.value.substr(0, 2))) {
+			switch (parseInt(c.value.substr(0, 2), 16)) {
 				case Platform.DeviceTypes.MA10350:
 					r = MA10350_LEAK.replace(/%SERIAL%/gi, c.value);
 					break;
@@ -234,7 +234,7 @@ MobileAlerts.prototype.updateSensorData = function()
 
 		if(a.getService(Service.TemperatureSensor)) {
 			s = a.getService(Service.TemperatureSensor);
-			switch (parseInt(c.value.substr(0, 2))) {
+			switch (parseInt(c.value.substr(0, 2), 16)) {
 				case Platform.DeviceTypes.MA10006:
 					p = c.value.indexOf('-');
 					r = (p < 0) ?
@@ -256,6 +256,7 @@ MobileAlerts.prototype.updateSensorData = function()
 				case Platform.DeviceTypes.MA10200:
 				case Platform.DeviceTypes.MA10230:
 				case Platform.DeviceTypes.MA10232:
+				case Platform.DeviceTypes.WH30_3312_02:
 					r = MA10200_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
 					break;
 
@@ -322,7 +323,7 @@ MobileAlerts.prototype.updateSensorData = function()
 
 		if(a.getService(Service.HumiditySensor)) {
 			s = a.getService(Service.HumiditySensor);
-			switch (parseInt(c.value.substr(0, 2))) {
+			switch (parseInt(c.value.substr(0, 2), 16)) {
 				case Platform.DeviceTypes.MA10006:
 					p = c.value.indexOf('-');
 					r = (p < 0) ?
@@ -333,6 +334,7 @@ MobileAlerts.prototype.updateSensorData = function()
 				case Platform.DeviceTypes.MA10200:
 				case Platform.DeviceTypes.MA10230:
 				case Platform.DeviceTypes.MA10232:
+				case Platform.DeviceTypes.WH30_3312_02:
 					r = MA10200_HUMIDITY.replace(/%SERIAL%/gi, c.value);
 					break;
 
@@ -451,7 +453,8 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
 
 	Platform.log('Adding Accessory ' + myName + '.');
 
-	t = parseInt(mySerial.substr(0, 2));
+	t = parseInt(mySerial.substr(0, 2), 16);
+	Platform.log('Adding Accessory ' + t + '.');
 	u = UUIDGen.generate(myName);
 	a = new Accessory(myName, u);
 	a.on('identify', function(isPaired, myCallback) {
@@ -491,6 +494,7 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
 		case Platform.DeviceTypes.MA10200:
 		case Platform.DeviceTypes.MA10230:
 		case Platform.DeviceTypes.MA10232:
+		case Platform.DeviceTypes.WH30_3312_02:
 			s = a.addService(Service.TemperatureSensor, a.displayName);
 			s = a.addService(Service.HumiditySensor, a.displayName);
 			break;
@@ -559,6 +563,9 @@ function cleanUmlauts(myName) {
 	myName=myName.replace(/&#214;/g, "Ö");
 	myName=myName.replace(/&#220;/g, "Ü");
 	myName=myName.replace(/&#223;/g, "ß");
+	myName=myName.replace(/\(/g, "");
+	myName=myName.replace(/\)/g, "");
+	myName=myName.replace(/ /g, "");
 
 	return myName;
 }

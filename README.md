@@ -1,6 +1,6 @@
 # homebridge-mobilealerts 
 
-This is a homebridge plugin for several Mobile-Alerts (Technoline) devices.
+This is a homebridge plugin for several Mobile-Alerts (Technoline/Weatherhub) devices.
 
 ## Installation
 1. Install homebridge using: npm install -g homebridge
@@ -51,6 +51,7 @@ To retrieve your iPhone ID please follow following guide:
 * MA 10350
 * MA 10421
 * MA 10700
+* WH 30.3312.02
 
 ## ToDo
 * Fakegato Support
