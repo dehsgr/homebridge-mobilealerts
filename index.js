@@ -29,6 +29,7 @@ var MA10421_HUMIDITY_3			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/
 var MA10700_TEMPERATURE			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10700_TEMPERATURE_CABLE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10700_HUMIDITY			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
+var MA10800						= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)<\\/h4>';
 
 // ~~~ globals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -94,7 +95,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 // ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10421: 0x11, MA10230: 0x12, MA10660: 0x17, MA10232: 0x18 };
+MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10800: 0x10, MA10421: 0x11, MA10230: 0x12, MA10660: 0x17, MA10232: 0x18 };
 
 // ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -201,6 +202,7 @@ MobileAlerts.prototype.updateSensorData = function()
 		s = a.getService(Service.AccessoryInformation);
 		c = s.getCharacteristic(Characteristic.SerialNumber);
 		r = undefined;
+
 		if(a.getService(Service.LeakSensor)) {
 			s = a.getService(Service.LeakSensor);
 			switch (parseInt(c.value.substr(0, 2), 16)) {
@@ -227,6 +229,37 @@ MobileAlerts.prototype.updateSensorData = function()
 
 					if (Platform.VerboseLogging) {
 						Platform.log('Setting Leack Detection Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
+					}
+				}
+			}
+		}
+
+		if(a.getService(Service.ContactSensor)) {
+			s = a.getService(Service.ContactSensor);
+			switch (parseInt(c.value.substr(0, 2), 16)) {
+				case Platform.DeviceTypes.MA10800:
+					r = MA10800.replace(/%SERIAL%/gi, c.value);
+					break;
+			}
+
+			if (r) {
+				r = new RegExp(r, 'gi');
+				m = r.exec(Platform.LastData);
+				if (m) {
+					b = true;
+					s.setCharacteristic(
+					Characteristic.ContactSensorState,
+						(
+							m[1] == 'Geschlossen' ||
+							m[1] == 'Closed' ||
+							m[1] == 'Fermé'
+						) ?
+						Characteristic.ContactSensorState.CONTACT_DETECTED :
+						Characteristic.ContactSensorState.CONTACT_NOT_DETECTED
+					);
+
+					if (Platform.VerboseLogging) {
+						Platform.log('Setting Contact State Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
 					}
 				}
 			}
@@ -529,6 +562,10 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
 				s = a.addService(Service.HumiditySensor, a.displayName);
 				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
 			}
+			break;
+
+		case Platform.DeviceTypes.MA10800:
+			s = a.addService(Service.ContactSensor, a.displayName);
 			break;
 	}
 
