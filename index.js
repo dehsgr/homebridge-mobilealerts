@@ -69,7 +69,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 	this.Config.log = this.Config.log || { verbose: false, HTML: false };
 	this.VerboseLogging = this.Config.log.verbose || false;
 	this.LogBodyHTML = this.Config.log.HTML || false;
-  this.ResetSensors = this.Config.reset || false;
+	this.ResetSensors = this.Config.reset || false;
 
 	if (!this.Config.iphoneid) {
 		Platform.log.error('iPhone-ID not configured properly! >> Stopping Initialization...');
@@ -437,23 +437,33 @@ MobileAlerts.prototype.fetchData = function()
 
 	Platform.log('Fetching Data...');
 	r = require('request');
-	r('http://measurements.mobile-alerts.eu/Home/SensorsOverview?phoneid=' + Platform.Config.iphoneid, function (myError, myResponse, myBody) {
-		switch (true) {
-			case myResponse && myResponse.statusCode == 200:
-				if (Platform.LogBodyHTML) {
-					Platform.log('We\'ll update Sensor Data from the following HTML Body:');
-					myBody.split('\n').forEach(function(myLine) { Platform.log(myLine); });
-				}
+	r(	{
+			method: 'POST',
+			url: 'https://measurements.mobile-alerts.eu/',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'User-Agent': 'MobileAlertsFetcher/1.0'
+			},
+			body: 'phoneid=' + Platform.Config.iphoneid
+		},
+		function (myError, myResponse, myBody) {
+			switch (true) {
+				case myResponse && myResponse.statusCode == 200:
+					if (Platform.LogBodyHTML) {
+						Platform.log('We\'ll update Sensor Data from the following HTML Body:');
+						myBody.split('\n').forEach(function(myLine) { Platform.log(myLine); });
+					}
 
-				Platform.LastData = myBody;
-				Platform.updateSensorData();
-				break;
+					Platform.LastData = myBody;
+					Platform.updateSensorData();
+					break;
 
-			default:
-				Platform.log.warn('There was an Error requesting initial Data for Sensor-Matching: ' + myError);
-				break;
-		}
-	}.bind(this));
+				default:
+					Platform.log.warn('There was an Error requesting initial Data for Sensor-Matching: ' + myError);
+					break;
+			}
+		}.bind(this)
+	);
 
 	setTimeout(Platform.fetchData.bind(this), POLLING_INTERVAL);
 }
