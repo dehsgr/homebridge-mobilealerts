@@ -459,7 +459,7 @@ MobileAlerts.prototype.fetchData = function()
 					break;
 
 				default:
-					Platform.log.warn('There was an Error requesting initial Data for Sensor-Matching: ' + myError);
+					Platform.log.warn('There was an Error requesting initial Data: ' + (myError || 'HTTP Status Code is ' + myResponse.statusCode));
 					break;
 			}
 		}.bind(this)

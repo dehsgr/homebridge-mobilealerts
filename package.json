@@ -1,6 +1,6 @@
 {
 	"name": "homebridge-mobilealerts",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"description": "This is a homebridge plugin for several Mobile-Alerts (Technoline) devices.",
 	"main": "index.js",
 	"scripts": {
