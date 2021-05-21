@@ -26,6 +26,8 @@ var MA10421_HUMIDITY			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5
 var MA10421_HUMIDITY_1			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10421_HUMIDITY_2			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10421_HUMIDITY_3			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
+var MA10450_TEMPERATURE			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
+var MA10450_TEMPERATURE_CABLE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10700_TEMPERATURE			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10700_TEMPERATURE_CABLE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10700_HUMIDITY			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
@@ -95,7 +97,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 // ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10800: 0x10, MA10421: 0x11, MA10230: 0x12, MA10660: 0x17, MA10232: 0x18 };
+MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10450: 0x0F, MA10800: 0x10, MA10421: 0x11, MA10230: 0x12, MA10660: 0x17, MA10232: 0x18 };
 
 // ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -323,6 +325,13 @@ MobileAlerts.prototype.updateSensorData = function()
 							r = MA10421_TEMPERATURE.replace(/%SERIAL%/gi, c.value);
 							break;
 					}
+					break;
+
+				case Platform.DeviceTypes.MA10450:
+					p = c.value.indexOf('-');
+					r = (p < 0) ?
+						MA10450_TEMPERATURE.replace(/%SERIAL%/gi, c.value) :
+						MA10450_TEMPERATURE_CABLE.replace(/%SERIAL%/gi, c.value.substr(0, --p));
 					break;
 
 				case Platform.DeviceTypes.MA10700:
@@ -563,6 +572,13 @@ MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
 				Platform.addAccessory(myName + ' (1)', mySerial + '-1');
 				Platform.addAccessory(myName + ' (2)', mySerial + '-2');
 				Platform.addAccessory(myName + ' (3)', mySerial + '-3');
+			}
+			break;
+
+		case Platform.DeviceTypes.MA10450:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			if (mySerial.indexOf('-') < 0) {
+				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
 			}
 			break;
 
