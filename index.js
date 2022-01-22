@@ -451,7 +451,7 @@ MobileAlerts.prototype.fetchData = function()
 			url: 'https://measurements.mobile-alerts.eu/',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				'User-Agent': 'MobileAlertsFetcher/1.0'
+				'User-Agent': 'MobileAlertsPleaseProvideOfficialAPI4ALL-2/1.0'
 			},
 			body: 'phoneid=' + Platform.Config.iphoneid
 		},
