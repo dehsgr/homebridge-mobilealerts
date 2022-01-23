@@ -16,7 +16,7 @@ This is a homebridge plugin for several Mobile-Alerts (Technoline/Weatherhub) de
 	{
 		"platform": "MobileAlerts",
 		"name": "MobileAlerts",
-		"iphoneid": "YOURIPHONEID"
+		"iphoneid": "YOURIPHONEID",
 		"pollinginterval": 420,
 		"log": {
 			"verbose": false,
