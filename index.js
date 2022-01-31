@@ -67,6 +67,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 	this.Manufacturer = this.Config.manufacturer || 'Technoline';
 	this.Model = this.Config.model || 'MobileAlerts';
 	this.Serial = this.Config.iphoneid;
+	this.Devices = this.Config.devices;
 	this.LastData;
 	this.Config.log = this.Config.log || { verbose: false, HTML: false };
 	this.VerboseLogging = this.Config.log.verbose || false;
@@ -127,10 +128,10 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 	ay = [];
 	r = /.*?sensor-header[\s\S]*?.*?<a href.*?>(.*?)<\/a>[\s\S]*?.*?<h4>(.*?)<\/h4>/gi;
 	m = r.exec(Platform.LastData);
-	while(m !== null) {                     // get each sensor serial and name
+	while(m !== null) {                     	// get each sensor serial and name
 		n = cleanUmlauts(m[MatchType.Name]);	// from initial sensor data...
 		s = m[MatchType.Serial];
-		ay[s] = n;                            // ...and add it to test array.
+		ay[s] = n;                            	// ...and add it to test array.
 
 		m = r.exec(Platform.LastData);
 	}
@@ -140,8 +141,14 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 	}
 
 	//remove ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	for (var s in Platform.Accessories) {   // iterate each accessory.
-		if ((!ay[s] && s.indexOf('-') < 0) || Platform.ResetSensors) { // known serial or reset?
+	for (var s in Platform.Accessories) {   	// iterate each accessory.
+		if ((s.indexOf('-') < 0 &&				// known serial or reset?
+			(
+				!ay[s] ||
+				(Platform.Devices && Platform.Devices.indexOf(s) < 0)
+			)) ||
+			Platform.ResetSensors)
+		{
 			if (Platform.VerboseLogging) {
 				Platform.log('Removing Sensor with Serial ' + s + '.');
 			}
@@ -158,13 +165,15 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 		}
 	}
 
-	r.lastIndex = 0;                        // re-set regex stato te be able to
-	m = r.exec(Platform.LastData);          // re-parse.
+	r.lastIndex = 0;                        	// re-set regex stato te be able to
+	m = r.exec(Platform.LastData);          	// re-parse.
 
 	//add ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	while(m !== null) {                     // get each sensor serial and name.
+	while(m !== null) {                     	// get each sensor serial and name.
 		s = m[MatchType.Serial];
-		if (!Platform.Accessories[s]) {       // known serial?
+		if ((!Platform.Devices || Platform.Devices.indexOf(s) >= 0) &&
+			!Platform.Accessories[s])			// known serial?
+		{
 			n = cleanUmlauts(m[MatchType.Name]);
 			if (Platform.VerboseLogging) {
 				Platform.log('Adding Sensor "' + n + '" with Serial ' + s + '.');

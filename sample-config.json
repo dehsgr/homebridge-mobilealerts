@@ -13,12 +13,17 @@
 			"platform": "MobileAlerts",
 			"name": "MobileAlerts",
 			"iphoneid": "012345678910",
+			"devices": [
+				"0123456789ABCDEF",
+				"1234567890ABCDEF",
+				"2345678901ABCDEF"
+			],
 			"pollinginterval": 420,
 			"log": {
 				"verbose": false,
 				"HTML": false
 			},
-      "reset": false
+      		"reset": false
 		}
 	],
 

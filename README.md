@@ -17,6 +17,11 @@ This is a homebridge plugin for several Mobile-Alerts (Technoline/Weatherhub) de
 		"platform": "MobileAlerts",
 		"name": "MobileAlerts",
 		"iphoneid": "YOURIPHONEID",
+		"devices": [
+			"0123456789ABCDEF",
+			"1234567890ABCDEF",
+			"2345678901ABCDEF"
+		],
 		"pollinginterval": 420,
 		"log": {
 			"verbose": false,
@@ -55,6 +60,3 @@ To retrieve your iPhone ID please follow following guide:
 * MA 10700
 * MA 10800
 * WH 30.3312.02
-
-## ToDo
-* Fakegato Support
