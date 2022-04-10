@@ -1,7 +1,533 @@
 // ~~~ constants ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-var POLLING_INTERVAL			= 07 * 60 * 1000;   // 7 minutes
-var WAIT_FOR_DATA_INTERVAL		= 01 * 01 * 1000;   // 1 second
+const 	API 					= require('./mobilealerts-api.js');
+const 	WAIT_FOR_DATA_INTERVAL	= 01 * 01 * 1000;   // 1 second
+const 	POLLING_INTERVAL		= 07 * 60 * 1000;   // 7 minutes | var is used for being able to override.
+
+// ~~~ globals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+var Accessory;
+var Service;
+var Characteristic;
+var UUIDGen;
+
+// ~~~ exports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+module.exports = function(homebridge)
+{
+	console.log('homebridge API Version: ' + homebridge.version);
+
+	Accessory = homebridge.platformAccessory;
+	Service = homebridge.hap.Service;
+	Characteristic = homebridge.hap.Characteristic;
+	UUIDGen = homebridge.hap.uuid;
+
+	homebridge.registerPlatform('homebridge-mobilealerts', 'MobileAlerts', MobileAlerts, true);
+}
+
+// ~~~ constructor / destructor ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function MobileAlerts(myLog, myConfig, myApi)
+{
+ var Platform = this;
+
+	this.log = myLog;
+	this.Config = myConfig || { "api": {} };
+
+	this.Accessories = [];
+
+	this.Name = this.Config.name || 'MobileAlerts';
+	this.Manufacturer = this.Config.manufacturer || 'Technoline';
+	this.Model = this.Config.model || 'MobileAlerts';
+	this.Serial = this.Config.iphoneid;
+	this.Devices = this.Config.devices || [];
+	this.LastData;
+	this.Config.log = this.Config.log || { verbose: false, HTML: false };
+	this.VerboseLogging = this.Config.log.verbose || false;
+	this.LogData = this.Config.log.data || false;
+	this.ResetSensors = this.Config.reset || false;
+
+	this.PhoneID = this.Serial;
+	this.Language = this.Config.api.language || 'de';
+	this.Clock = Math.abs(parseInt(this.Config.api.ampm || false));
+	this.Temperature = Math.abs(parseInt(!(this.Config.api.celsius || true)));
+	this.Rain = Math.abs(parseInt(!(this.Config.api.mm || true)));
+	this.Wind = Math.abs(parseInt(this.Config.api.speedunit || 0));
+
+	this.debug = function (myLogMessage)
+	{
+		if (Platform.VerboseLogging)
+		{
+			Platform.log(myLogMessage);
+		}
+	};
+
+	if (!this.Config.iphoneid)
+	{
+		Platform.log.error('iPhone ID not configured properly! >> Stopping Initialization...');
+		return;
+	}
+	else
+	{
+		Platform.log('iPhone ID was set to ' + Platform.Config.iphoneid + '...');
+	}
+
+	if (this.Config.developmentpollinginterval)
+	{
+		const POLLING_INTERVAL = Platform.Config.developmentpollinginterval * 1000;
+		Platform.log('Development Polling Interval was set to ' + Platform.Config.developmentpollinginterval + 's...');
+	}
+
+	this.fetchData();
+
+	if (myApi)
+	{
+		this.Api = myApi;
+		if (Platform.Config.legacy) {
+			this.Api.on('didFinishLaunching', this.OnFinishLaunchingLegacy.bind(this));
+		}
+		else
+		{
+			this.Api.on('didFinishLaunching', this.OnFinishLaunching.bind(this));
+		}
+	}
+}
+
+// ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MobileAlerts.prototype.OnFinishLaunching = function()
+{
+ var Platform = this;
+ var MatchType = { Name: 1, Serial: 2 };
+ var ao;  // additional objects (sensors)
+ var ay;  // test array
+ var r;   // regex
+ var m;   // matches
+ var n;   // name
+ var s;   // serial
+ var c;   // # created devices
+ var d;   // # deletd devices
+ var p;   // position
+
+	Platform.log('Merging Sensors...');
+	if (!Platform.LastData)
+	{
+		Platform.log.warn('Waiting for initial Sensor Data...');
+		setTimeout(Platform.OnFinishLaunching.bind(this), WAIT_FOR_DATA_INTERVAL);
+		return;
+	}
+
+	ay = [];
+
+	var ds = Platform.LastData.result.devices;					
+	for (var i = 0; i < ds.length; i++)				// get each sensor serial and name
+	{												// from initial sensor data and
+		var d = ds[i];								// add it to test array.
+		ay[d.deviceid] = cleanUmlauts(d.name)
+	}
+
+	if (Platform.ResetSensors)
+	{
+		Platform.log('Resetting Sensors...');
+	}
+
+	c = d = 0;
+
+	/* remove sensors */
+
+	for (var s in Platform.Accessories)
+	{
+		if ((s.indexOf('-') < 0 &&					// known serial or reset?
+			(
+				!ay[s] ||
+				(Platform.Devices && Platform.Devices.indexOf(s) < 0)
+			)) ||
+			Platform.ResetSensors)
+		{
+			Platform.debug('Removing Sensor with Serial ' + s + '.');
+			Platform.removeAccessory(s);        	// no! >> so we've to remove accessory!
+
+			var ao = new Array('OUT', 'CABLE', '1', '2', '3');
+			for (var i = 0; i < ao.length; i++)
+			{
+				if (Platform.Accessories[s + '-' + ao[i]])
+				{
+					Platform.removeAccessory(s + '-' + ao[i]);
+				}
+			}
+
+			if (s.indexOf('-') < 0)
+			{
+				d++;
+			}
+		}
+	}
+
+	/* add sensors */
+
+	for (s in ay)									// iterate each sensor and check
+	{												// if there exists an accessory.
+		n = ay[s];
+
+		if ((!Platform.Devices || Platform.Devices.indexOf(s) >= 0) &&
+			!Platform.Accessories[s])				// known serial?
+		{
+			Platform.debug('Adding Sensor "' + n + '" with Serial ' + s + '.');
+			Platform.addAccessory(n, s);        	// no! >> so we've to add new accessory!
+			c++;
+		}
+	}
+
+	Platform.log(c + ' Sensors created.');
+	if (d > 0)
+	{
+		Platform.log.warn(d + ' Sensors deleted!');
+	}
+	else
+	{
+		Platform.log(d + ' Sensors deleted.');
+	}
+}
+
+// ~~~ functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MobileAlerts.prototype.getMeasurement = function(myData, mySerial)
+{
+	var ds = myData.result.devices;
+	for (var i = 0; i < ds.length; i++)
+	{
+		var d = ds[i];
+		if (d.deviceid === mySerial)
+		{
+			return d.measurements[0];
+		}
+	}
+}
+
+MobileAlerts.prototype.updateSensorData = function()
+{
+ var Platform = this;
+ var i;   // id (serial)
+ var a;   // accessory
+ var m;   // measurement
+ var b;   // boolean
+ var p;   // postion
+ var d;   // data 
+
+	Platform.log('Updating Accessory Data...');
+	for (var i in Platform.Accessories)
+	{
+		a = Platform.Accessories[i];
+		s = a.getService(Service.AccessoryInformation);
+		c = s.getCharacteristic(Characteristic.SerialNumber);
+		m = Platform.getMeasurement(Platform.LastData, c.value.replace(/\-.*/, ''));
+
+		if(a.getService(Service.LeakSensor))
+		{
+			s = a.getService(Service.LeakSensor);
+			s.setCharacteristic(
+				Characteristic.LeakDetected,
+				m.t2 ?
+				Characteristic.LeakDetected.LEAK_DETECTED :
+				Characteristic.LeakDetected.LEAK_NOT_DETECTED
+			);
+
+			Platform.debug('Setting Leack Detection Value to ' + (m.t2 ? 'DETECTED' : 'NOT DETECTED')  + ' for Sensor ' + a.displayName + '.');
+		}
+
+		if(a.getService(Service.ContactSensor))
+		{
+			s = a.getService(Service.ContactSensor);
+			s.setCharacteristic(
+				Characteristic.ContactSensorState,
+				m.w ?
+				Characteristic.ContactSensorState.CONTACT_DETECTED :
+				Characteristic.ContactSensorState.CONTACT_NOT_DETECTED
+			);
+
+			Platform.debug('Setting Contact State Value to "' + m.w  + '" for Sensor ' + a.displayName + '.');
+		}
+
+		if(a.getService(Service.TemperatureSensor))
+		{
+			s = a.getService(Service.TemperatureSensor);
+
+			d = m.t1;
+			p = c.value.indexOf('-');
+			if (p >= 0)
+			{
+				p = parseInt(c.value.substr(++p, (c.length - p)));
+				if (isNaN(p))
+				{
+					p = 2;
+				}
+				else
+				{
+					p++;
+				}
+
+				d = m['t' + p];
+			}
+
+			s.getCharacteristic(Characteristic.CurrentTemperature).setProps({ minValue: -100 });
+			s.setCharacteristic(Characteristic.CurrentTemperature, d);
+
+			Platform.debug('Setting Temperature Value to ' + d + '° for Sensor ' + a.displayName + '.');
+		}
+
+		if(a.getService(Service.HumiditySensor))
+		{
+			s = a.getService(Service.HumiditySensor);
+
+			d = m.h;
+			p = c.value.indexOf('-');
+			if (p >= 0)
+			{
+				p = parseInt(c.value.substr(++p, (c.length - p)));
+				if (isNaN(p))
+				{
+					p = 2;
+				}
+				else
+				{
+					p++;
+				}
+
+				d = m['h' + p];
+			}
+
+			s.setCharacteristic(Characteristic.CurrentRelativeHumidity, d);
+
+			Platform.debug('Setting Humidity Value to ' + d + '% for Sensor ' + a.displayName + '.');
+		}
+	}
+}
+
+MobileAlerts.prototype.fetchData = function()
+{
+ var Platform = this;
+ var r;   // request
+
+	Platform.log('Fetching Data...');
+	if (Platform.Config.legacy)
+	{
+		API.fetchDataLegacy(
+			'measurements.mobile-alerts.eu',
+			Platform.Config.iphoneid,
+			function (myData)
+			{
+				if (Platform.LogData)
+				{
+					Platform.log('We\'ll update Sensor Data from the following Data:');
+					myData.split('\n').forEach(function(myLine) { Platform.log(myLine); });
+				}
+	
+				Platform.LastData = myData;
+				Platform.updateSensorDataLegacy();
+			}.bind(this)
+		);
+	}
+	else
+	{
+		API.fetchData(
+			Platform,
+			Platform.Devices,
+			function (myData)
+			{
+				if (Platform.LogData)
+				{
+					Platform.log('We\'ll update Sensor Data from the following Data:');
+					Platform.log(JSON.stringify(myData));
+				}
+	
+				Platform.LastData = myData;
+				Platform.updateSensorData();
+			}.bind(this)
+		);
+	}
+
+	setTimeout(Platform.fetchData.bind(this), POLLING_INTERVAL);
+}
+
+MobileAlerts.prototype.configureAccessory = function(myAccessory)
+{
+ var Platform = this;
+ var s;   // service
+ var c;   // characteristic
+
+	Platform.log(myAccessory.displayName, 'is being configured.');
+
+	s = myAccessory.getService(Service.AccessoryInformation);
+	c = s.getCharacteristic(Characteristic.SerialNumber);
+	Platform.Accessories[c.value] = myAccessory;
+
+	myAccessory.reachable = false;
+	myAccessory.on('identify', function(isPaired, myCallback) {
+		Platform.log(myAccessory.displayName, 'is being identified.');
+		myCallback();
+	});
+}
+
+MobileAlerts.prototype.addAccessory = function(myName, mySerial)
+{
+ var Platform = this;
+ var u;   // uuid
+ var a;   // accessory
+ var s;   // service
+ var c;   // characteristic
+ var t;   // type
+
+	t = parseInt(mySerial.substr(0, 2), 16);
+
+	Platform.debug('Adding Accessory ' + myName + ' (Type: ' + t + ').');
+
+	u = UUIDGen.generate(myName);
+	a = new Accessory(myName, u);
+	a.on('identify', function(isPaired, myCallback) {
+		Platform.log(myName, 'is being identified.');
+		myCallback();
+	});
+
+	s = a.getService(Service.AccessoryInformation);
+	s.setCharacteristic(Characteristic.Manufacturer, Platform.Manufacturer)
+	s.setCharacteristic(Characteristic.SerialNumber, mySerial);
+	for (var i in Platform.DeviceTypes)
+	{
+		if (t == Platform.DeviceTypes[i])
+		{
+			s.setCharacteristic(Characteristic.Model, i);
+		}
+	}
+
+	switch (t)
+	{
+		case Platform.DeviceTypes.MA10006:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			s = a.addService(Service.HumiditySensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10120:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10100:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			break;
+
+		case Platform.DeviceTypes.MA10200:
+		case Platform.DeviceTypes.MA10230:
+		case Platform.DeviceTypes.MA10232:
+		case Platform.DeviceTypes.WH30_3312_02:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			s = a.addService(Service.HumiditySensor, a.displayName);
+			break;
+
+		case Platform.DeviceTypes.MA10320:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				s = a.addService(Service.HumiditySensor, a.displayName);
+				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10350:
+			s = a.addService(Service.LeakSensor, a.displayName);
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			s = a.addService(Service.HumiditySensor, a.displayName);
+			break;
+
+		case Platform.DeviceTypes.MA10421:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			s = a.addService(Service.HumiditySensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				Platform.addAccessory(myName + ' (1)', mySerial + '-1');
+				Platform.addAccessory(myName + ' (2)', mySerial + '-2');
+				Platform.addAccessory(myName + ' (3)', mySerial + '-3');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10450:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10700:
+			s = a.addService(Service.TemperatureSensor, a.displayName);
+			if (mySerial.indexOf('-') < 0)
+			{
+				s = a.addService(Service.HumiditySensor, a.displayName);
+				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
+			}
+
+			break;
+
+		case Platform.DeviceTypes.MA10800:
+			s = a.addService(Service.ContactSensor, a.displayName);
+			break;
+	}
+
+	Platform.Accessories[mySerial] = a;
+	Platform.Api.registerPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
+}
+
+MobileAlerts.prototype.removeAccessory = function(mySerial)
+{
+ var Platform = this;
+ var a;   // accessory
+ var i;   // index
+
+	a = Platform.Accessories[mySerial];
+	if (!a)
+	{
+		return;
+	}
+
+	Platform.log.warn('Removing Accessory ' + a.displayName + '.');
+
+	i = Platform.Accessories.indexOf(a);
+	Platform.Accessories.splice(i, 1);
+	Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
+	delete Platform.Accessories[mySerial];		// IMPORTANT! otherwise reset won't work because object already exists in memory.
+}
+
+function cleanUmlauts(myName) {
+	myName=myName.replace(/&#228;/g, "ä");
+	myName=myName.replace(/&#246;/g, "ö");
+	myName=myName.replace(/&#252;/g, "ü");
+	myName=myName.replace(/&#196;/g, "Ä");
+	myName=myName.replace(/&#214;/g, "Ö");
+	myName=myName.replace(/&#220;/g, "Ü");
+	myName=myName.replace(/&#223;/g, "ß");
+	myName=myName.replace(/\(/g, "");
+	myName=myName.replace(/\)/g, "");
+	myName=myName.replace(/ /g, "");
+
+	return myName;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~ deprecated code starts here ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// ~~~ constants (deprecated) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 var MA10006_TEMPERATURE_INSIDE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
 var MA10006_TEMPERATURE_OUTSIDE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[ C]?<\\/h4>';
@@ -33,76 +559,13 @@ var MA10700_TEMPERATURE_CABLE	= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*
 var MA10700_HUMIDITY			= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)[%]?<\\/h4>';
 var MA10800						= '.*?<h4>%SERIAL%[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<\\/h5>[\\s\\S]*?.*?<h4>(.*?)<\\/h4>';
 
-// ~~~ globals ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-var Accessory;
-var Service;
-var Characteristic;
-var UUIDGen;
-
-// ~~~ exports ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-module.exports = function(homebridge)
-{
-	console.log('homebridge API Version: ' + homebridge.version);
-
-	Accessory = homebridge.platformAccessory;
-	Service = homebridge.hap.Service;
-	Characteristic = homebridge.hap.Characteristic;
-	UUIDGen = homebridge.hap.uuid;
-
-	homebridge.registerPlatform('homebridge-mobilealerts', 'MobileAlerts', MobileAlerts, true);
-}
-
-// ~~~ constructor / destructor ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-function MobileAlerts(myLog, myConfig, myApi)
-{
- var Platform = this;
-
-	this.log = myLog;
-	this.Config = myConfig || {};
-	this.Accessories = [];
-	this.Name = this.Config.name || 'MobileAlerts';
-	this.Manufacturer = this.Config.manufacturer || 'Technoline';
-	this.Model = this.Config.model || 'MobileAlerts';
-	this.Serial = this.Config.iphoneid;
-	this.Devices = this.Config.devices;
-	this.LastData;
-	this.Config.log = this.Config.log || { verbose: false, HTML: false };
-	this.VerboseLogging = this.Config.log.verbose || false;
-	this.LogBodyHTML = this.Config.log.HTML || false;
-	this.ResetSensors = this.Config.reset || false;
-
-	if (!this.Config.iphoneid) {
-		Platform.log.error('iPhone-ID not configured properly! >> Stopping Initialization...');
-		return;
-	} else {
-		Platform.log('iPhone-ID was set to ' + Platform.Config.iphoneid + '...');
-	}
-
-	if (!this.Config.pollinginterval) {
-		Platform.log.warn('Poling Interval not configured properly! >> Using default of 420s...');
-	} else {
-		POLLING_INTERVAL = Platform.Config.pollinginterval * 1000
-		Platform.log('Polling Interval was set to ' + Platform.Config.pollinginterval + 's...');
-	}
-
-	this.fetchData();
-
-	if (myApi) {
-		this.Api = myApi;
-		this.Api.on('didFinishLaunching', this.OnFinishLaunching.bind(this));
-	}
-}
-
-// ~~~ enums ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~ enums (deprecated) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MobileAlerts.prototype.DeviceTypes = { MA10120: 0x01, MA10100: 0x02, MA10200: 0x03, MA10350: 0x04, MA10700: 0x06, MA10006: 0x07, MA10320: 0x09, WH30_3312_02: 0x0E, MA10450: 0x0F, MA10800: 0x10, MA10421: 0x11, MA10230: 0x12, MA10660: 0x17, MA10232: 0x18 };
 
-// ~~~ event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~ event handlers (deprecated) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.OnFinishLaunching = function()
+MobileAlerts.prototype.OnFinishLaunchingLegacy = function()
 {
  var Platform = this;
  var MatchType = { Name: 1, Serial: 2 };
@@ -120,7 +583,7 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 
 	if (!Platform.LastData) {
 		Platform.log.warn('Waiting for initial Sensor Data...');
-		setTimeout(Platform.OnFinishLaunching.bind(this), WAIT_FOR_DATA_INTERVAL);
+		setTimeout(Platform.OnFinishLaunchingLegacy.bind(this), WAIT_FOR_DATA_INTERVAL);
 		return;
 	}
 
@@ -149,11 +612,9 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 			)) ||
 			Platform.ResetSensors)
 		{
-			if (Platform.VerboseLogging) {
-				Platform.log('Removing Sensor with Serial ' + s + '.');
-			}
-
+			Platform.debug('Removing Sensor with Serial ' + s + '.');
 			Platform.removeAccessory(s);        // no! >> so we've to remove accessory!
+
 			var ao = new Array('OUT', 'CABLE', '1', '2', '3');
 			for (var i = 0; i < ao.length; i++) {
 				if (Platform.Accessories[s + '-' + ao[i]]) {
@@ -161,7 +622,9 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 				}
 			}
 
-			d++;
+			if (s.indexOf('-') < 0) {
+				d++;
+			}
 		}
 	}
 
@@ -175,10 +638,7 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 			!Platform.Accessories[s])			// known serial?
 		{
 			n = cleanUmlauts(m[MatchType.Name]);
-			if (Platform.VerboseLogging) {
-				Platform.log('Adding Sensor "' + n + '" with Serial ' + s + '.');
-			}
-
+			Platform.debug('Adding Sensor "' + n + '" with Serial ' + s + '.');
 			Platform.addAccessory(n, s);        // no! >> so we've to add new accessory!
 			c++;
 		}
@@ -194,9 +654,9 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 	}
 }
 
-// ~~~ functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~ functions (deprecated) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MobileAlerts.prototype.updateSensorData = function()
+MobileAlerts.prototype.updateSensorDataLegacy = function()
 {
  var Platform = this;
  var i;   // id (serial)
@@ -238,9 +698,7 @@ MobileAlerts.prototype.updateSensorData = function()
 						Characteristic.LeakDetected.LEAK_DETECTED
 					);
 
-					if (Platform.VerboseLogging) {
-						Platform.log('Setting Leack Detection Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
-					}
+					Platform.debug('Setting Leack Detection Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
 				}
 			}
 		}
@@ -269,9 +727,7 @@ MobileAlerts.prototype.updateSensorData = function()
 						Characteristic.ContactSensorState.CONTACT_NOT_DETECTED
 					);
 
-					if (Platform.VerboseLogging) {
-						Platform.log('Setting Contact State Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
-					}
+					Platform.debug('Setting Contact State Value to "' + m[1]  + '" for Sensor ' + a.displayName + '.');
 				}
 			}
 		}
@@ -362,9 +818,7 @@ MobileAlerts.prototype.updateSensorData = function()
 						s.getCharacteristic(Characteristic.CurrentTemperature).setProps({ minValue: -100 });
 						s.setCharacteristic(Characteristic.CurrentTemperature, d);
 
-						if (Platform.VerboseLogging) {
-							Platform.log('Setting Temperature Value to ' + parseFloat(m[1].replace(/,/gi, '.'))  + '° for Sensor ' + a.displayName + '.');
-						}
+						Platform.debug('Setting Temperature Value to ' + parseFloat(m[1].replace(/,/gi, '.'))  + '° for Sensor ' + a.displayName + '.');
 					} else {
 						Platform.log.warn('Could not get valid Temperature Value for Sensor ' + a.displayName + '!');
 					}
@@ -432,9 +886,7 @@ MobileAlerts.prototype.updateSensorData = function()
 						b = true;
 						s.setCharacteristic(Characteristic.CurrentRelativeHumidity, d);
 
-						if (Platform.VerboseLogging) {
-							Platform.log('Setting Humidity Value to ' + parseInt(m[1])  + '% for Sensor ' + a.displayName + '.');
-						}
+						Platform.debug('Setting Humidity Value to ' + parseInt(m[1])  + '% for Sensor ' + a.displayName + '.');
 					} else {
 						Platform.log.warn('Could not get valid Humidity Value for Sensor ' + a.displayName + '!');
 					}
@@ -446,198 +898,4 @@ MobileAlerts.prototype.updateSensorData = function()
 			}
 		}
 	}
-}
-
-MobileAlerts.prototype.fetchData = function()
-{
- var Platform = this;
- var r;   // request
-
-	Platform.log('Fetching Data...');
-	r = require('request');
-	r(	{
-			method: 'POST',
-			url: 'https://measurements.mobile-alerts.eu/',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'User-Agent': 'MobileAlertsPleaseProvideOfficialAPI4ALL-2/1.0'
-			},
-			body: 'phoneid=' + Platform.Config.iphoneid
-		},
-		function (myError, myResponse, myBody) {
-			switch (true) {
-				case myResponse && myResponse.statusCode == 200:
-					if (Platform.LogBodyHTML) {
-						Platform.log('We\'ll update Sensor Data from the following HTML Body:');
-						myBody.split('\n').forEach(function(myLine) { Platform.log(myLine); });
-					}
-
-					Platform.LastData = myBody;
-					Platform.updateSensorData();
-					break;
-
-				default:
-					Platform.log.warn('There was an Error requesting initial Data: ' + (myError || 'HTTP Status Code is ' + myResponse.statusCode));
-					break;
-			}
-		}.bind(this)
-	);
-
-	setTimeout(Platform.fetchData.bind(this), POLLING_INTERVAL);
-}
-
-MobileAlerts.prototype.configureAccessory = function(myAccessory) {
- var Platform = this;
- var s;   // service
- var c;   // characteristic
-
-	Platform.log(myAccessory.displayName, 'is being configured.');
-
-	s = myAccessory.getService(Service.AccessoryInformation);
-	c = s.getCharacteristic(Characteristic.SerialNumber);
-	Platform.Accessories[c.value] = myAccessory;
-
-	myAccessory.reachable = false;
-	myAccessory.on('identify', function(isPaired, myCallback) {
-		Platform.log(myAccessory.displayName, 'is being identified.');
-		myCallback();
-	});
-}
-
-MobileAlerts.prototype.addAccessory = function(myName, mySerial) {
- var Platform = this;
- var u;   // uuid
- var a;   // accessory
- var s;   // service
- var c;   // characteristic
- var t;   // type
-
-	Platform.log('Adding Accessory ' + myName + '.');
-
-	t = parseInt(mySerial.substr(0, 2), 16);
-	Platform.log('Adding Accessory ' + t + '.');
-	u = UUIDGen.generate(myName);
-	a = new Accessory(myName, u);
-	a.on('identify', function(isPaired, myCallback) {
-		Platform.log(myName, 'is being identified.');
-		myCallback();
-	});
-
-	s = a.getService(Service.AccessoryInformation);
-	s.setCharacteristic(Characteristic.Manufacturer, Platform.Manufacturer)
-	s.setCharacteristic(Characteristic.SerialNumber, mySerial);
-	for (var i in Platform.DeviceTypes) {
-		if (t == Platform.DeviceTypes[i]) {
-			s.setCharacteristic(Characteristic.Model, i);
-		}
-	}
-
-	switch (t) {
-		case Platform.DeviceTypes.MA10006:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			s = a.addService(Service.HumiditySensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10120:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				Platform.addAccessory(myName + ' (Out)', mySerial + '-OUT');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10100:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			break;
-
-		case Platform.DeviceTypes.MA10200:
-		case Platform.DeviceTypes.MA10230:
-		case Platform.DeviceTypes.MA10232:
-		case Platform.DeviceTypes.WH30_3312_02:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			s = a.addService(Service.HumiditySensor, a.displayName);
-			break;
-
-		case Platform.DeviceTypes.MA10320:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				s = a.addService(Service.HumiditySensor, a.displayName);
-				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10350:
-			s = a.addService(Service.LeakSensor, a.displayName);
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			s = a.addService(Service.HumiditySensor, a.displayName);
-			break;
-
-		case Platform.DeviceTypes.MA10421:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			s = a.addService(Service.HumiditySensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				Platform.addAccessory(myName + ' (1)', mySerial + '-1');
-				Platform.addAccessory(myName + ' (2)', mySerial + '-2');
-				Platform.addAccessory(myName + ' (3)', mySerial + '-3');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10450:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10700:
-			s = a.addService(Service.TemperatureSensor, a.displayName);
-			if (mySerial.indexOf('-') < 0) {
-				s = a.addService(Service.HumiditySensor, a.displayName);
-				Platform.addAccessory(myName + ' (Cable)', mySerial + '-CABLE');
-			}
-			break;
-
-		case Platform.DeviceTypes.MA10800:
-			s = a.addService(Service.ContactSensor, a.displayName);
-			break;
-	}
-
-	Platform.Accessories[mySerial] = a;
-	Platform.Api.registerPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
-}
-
-MobileAlerts.prototype.removeAccessory = function(mySerial)
-{
- var Platform = this;
- var a;   // accessory
- var i;   // index
-
-	a = Platform.Accessories[mySerial];
-	if (!a) {
-		return;
-	}
-
-	Platform.log.warn('Removing Accessory ' + a.displayName + '.');
-
-  i = Platform.Accessories.indexOf(a);
-  Platform.Accessories.splice(i, 1);
-  Platform.Api.unregisterPlatformAccessories("homebridge-mobilealerts", "MobileAlerts", [a]);
-  delete Platform.Accessories[mySerial];    //wichtig, sonst funktioniert reset nicht, da a bislang nicht eigentlich entfernt wurde
-}
-
-function cleanUmlauts(myName) {
-	myName=myName.replace(/&#228;/g, "ä");
-	myName=myName.replace(/&#246;/g, "ö");
-	myName=myName.replace(/&#252;/g, "ü");
-	myName=myName.replace(/&#196;/g, "Ä");
-	myName=myName.replace(/&#214;/g, "Ö");
-	myName=myName.replace(/&#220;/g, "Ü");
-	myName=myName.replace(/&#223;/g, "ß");
-	myName=myName.replace(/\(/g, "");
-	myName=myName.replace(/\)/g, "");
-	myName=myName.replace(/ /g, "");
-
-	return myName;
 }

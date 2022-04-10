@@ -18,16 +18,22 @@ This is a homebridge plugin for several Mobile-Alerts (Technoline/Weatherhub) de
 		"name": "MobileAlerts",
 		"iphoneid": "YOURIPHONEID",
 		"devices": [
-			"0123456789ABCDEF",
-			"1234567890ABCDEF",
-			"2345678901ABCDEF"
+			"0123456789ABCDEF",	// sensor serial
+			"1234567890ABCDEF",	// sensor serial
+			"2345678901ABCDEF"	// sensor serial
 		],
-		"pollinginterval": 420,
-		"log": {
-			"verbose": false,
-			"HTML": false
+		"api": {				// -> fit this to app settings!
+			"language": "de",		
+			"ampm": false,		// use am/pm vs. 24h
+			"celsius": true,	// use °C vs. °F
+			"mm": true,			// use mm vs. in
+			"speedunit": 0		// 0=m/s; 1=km/h; 2=mph; 3=kn
 		},
-		"reset": false
+		"log": {
+			"verbose": false,	// increase log output
+			"data": false		// log received data
+		},
+		"reset": false			// reset all sensors
 	}
 ]
 ```

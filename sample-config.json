@@ -18,10 +18,16 @@
 				"1234567890ABCDEF",
 				"2345678901ABCDEF"
 			],
-			"pollinginterval": 420,
+			"api": {
+				"language": "de",
+				"ampm": false,
+				"celsius": true,
+				"mm": true,
+				"speedunit": 0
+			},
 			"log": {
 				"verbose": false,
-				"HTML": false
+				"data": false
 			},
       		"reset": false
 		}

@@ -1,6 +1,6 @@
 {
 	"name": "homebridge-mobilealerts",
-	"version": "1.6.0",
+	"version": "2.0.0",
 	"description": "This is a homebridge plugin for several Mobile-Alerts (Technoline) devices.",
 	"main": "index.js",
 	"scripts": {
@@ -20,6 +20,7 @@
 		"url": "git://github.com/dehsgr/homebridge-mobilealerts.git"
 	},
 	"dependencies": {
-		"request": "^2.67.0"
+		"request": "^2.75.0",
+		"utf8": "^3.0.0"
 	}
 }
