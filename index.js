@@ -213,6 +213,7 @@ MobileAlerts.prototype.updateSensorData = function()
  var b;   // boolean
  var p;   // postion
  var d;   // data 
+ var f;	  // fault
 
 	Platform.log('Updating Accessory Data...');
 	for (var i in Platform.Accessories)
@@ -226,6 +227,16 @@ MobileAlerts.prototype.updateSensorData = function()
 			return;
 		}
 
+		s.addOptionalCharacteristic(Characteristic.StatusLowBattery);
+		s.setCharacteristic(
+			Characteristic.StatusLowBattery,
+			m.lowbattery ?
+			Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW :
+			Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+		);
+
+		Platform.debug('Setting Status Low Battery to ' + (m.lowbattery ? 'LOW BATTERY' : 'OK')  + ' for Sensor ' + a.displayName + '.');
+
 		if(a.getService(Service.LeakSensor))
 		{
 			s = a.getService(Service.LeakSensor);
@@ -236,7 +247,7 @@ MobileAlerts.prototype.updateSensorData = function()
 				Characteristic.LeakDetected.LEAK_NOT_DETECTED
 			);
 
-			Platform.debug('Setting Leack Detection Value to ' + (m.t2 ? 'DETECTED' : 'NOT DETECTED')  + ' for Sensor ' + a.displayName + '.');
+			Platform.debug('Setting Leak Detection Value to ' + (m.t2 ? 'DETECTED' : 'NOT DETECTED')  + ' for Sensor ' + a.displayName + '.');
 		}
 
 		if(a.getService(Service.ContactSensor))
