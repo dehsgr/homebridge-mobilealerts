@@ -221,6 +221,10 @@ MobileAlerts.prototype.updateSensorData = function()
 		s = a.getService(Service.AccessoryInformation);
 		c = s.getCharacteristic(Characteristic.SerialNumber);
 		m = Platform.getMeasurement(Platform.LastData, c.value.replace(/\-.*/, ''));
+		if (!m)
+		{
+			return;
+		}
 
 		if(a.getService(Service.LeakSensor))
 		{
@@ -256,7 +260,7 @@ MobileAlerts.prototype.updateSensorData = function()
 			p = c.value.indexOf('-');
 			if (p >= 0)
 			{
-				p = parseInt(c.value.substr(++p, (c.length - p)));
+				p = parseInt(c.value.substr(++p, (c.value.length - p)));
 				if (isNaN(p))
 				{
 					p = 2;
@@ -279,11 +283,11 @@ MobileAlerts.prototype.updateSensorData = function()
 		{
 			s = a.getService(Service.HumiditySensor);
 
-			d = m.h;
+			d = m.h || m.h1;
 			p = c.value.indexOf('-');
 			if (p >= 0)
 			{
-				p = parseInt(c.value.substr(++p, (c.length - p)));
+				p = parseInt(c.value.substr(++p, (c.value.length - p)));
 				if (isNaN(p))
 				{
 					p = 2;
