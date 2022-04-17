@@ -179,14 +179,21 @@ MobileAlerts.prototype.OnFinishLaunching = function()
 		}
 	}
 
-	Platform.log(c + ' Sensors created.');
+	Platform.log(c + ' Sensors added.');
 	if (d > 0)
 	{
-		Platform.log.warn(d + ' Sensors deleted!');
+		Platform.log.warn(d + ' Sensors removed!');
 	}
 	else
 	{
-		Platform.log(d + ' Sensors deleted.');
+		Platform.log(d + ' Sensors removed.');
+	}
+
+	/* update sensor data if there were sensors added */
+
+	if (c > 0)
+	{
+		Platform.updateSensorData();
 	}
 }
 
