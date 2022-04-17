@@ -33,6 +33,7 @@ function MobileAlerts(myLog, myConfig, myApi)
 
 	this.log = myLog;
 	this.Config = myConfig || { "api": {} };
+	this.Config.api = myConfig.api || {};
 
 	this.Accessories = [];
 
